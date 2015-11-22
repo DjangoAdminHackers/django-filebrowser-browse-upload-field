@@ -79,8 +79,9 @@
                 params: { 'csrf_token': '{{ csrf_token }}',
                           'csrf_name': 'csrfmiddlewaretoken',
                           'csrf_xname': 'X-CSRFToken',
-                          'temporary': 'true',
-                          'folder': '{{ final_attrs.temp_upload_dir }}', },
+                          'temporary': 'false',
+                          'filebrowser_directory': '{{ final_attrs.filebrowser_directory }}',
+                          'folder': '{{ final_attrs.upload_to }}'},
 
                 minSizeLimit: 0,
                 debug: false,
@@ -104,7 +105,8 @@
                 onComplete: function(id, fileName, resp){
                     if (resp.success) {
                         $(this.element).find('.progress-bar').fadeOut();
-                        $('#{{ final_attrs.id }}').val(resp.temp_filename);
+                        $('#{{ final_attrs.id }}').val(this.params.filebrowser_directory + this.params.folder + resp.filename);
+                        $('#{{ final_attrs.id }}').parent().find('p.preview img').attr('src', resp.admin_thumbnail_url);
                     }
                 },
                 showMessage: function(message){ alert(message); }

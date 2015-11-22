@@ -56,6 +56,7 @@ class FileBrowseAndUploadWidget(Input):
         final_attrs['search_icon'] = static('filebrowser/img/filebrowser_icon_show.gif')
         final_attrs['url'] = url
         final_attrs['directory'] = self.directory
+        final_attrs['filebrowser_directory'] = self.site.directory
         final_attrs['extensions'] = self.extensions
         final_attrs['format'] = self.format
         final_attrs['upload_to'] = self.upload_to
@@ -151,8 +152,8 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
             'temp_upload_dir': self.temp_upload_dir
         }
         return super(FileBrowseAndUploadField, self).formfield(**defaults)
-        
-        
+
+
 try:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([], ["^filebrowser\.fields\.FileBrowseAndUploadField"])
