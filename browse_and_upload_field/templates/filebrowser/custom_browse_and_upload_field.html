@@ -1,16 +1,5 @@
 {% load i18n fb_versions %}
 
-<input id="{{ final_attrs.id }}" type="text" class="vTextField vFileBrowseField vFileBrowseField{% if final_attrs.class %} {{ final_attrs.class }}{% endif %}" name="{{ final_attrs.name }}" value="{{ value.path }}" />
-<div id="{{ final_attrs.id }}-uploader" class="fb-uploader-container"></div>
-<a href="javascript:FileBrowser.show('{{ final_attrs.id }}', '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show"></a>
-<a href="#" onclick="FileBrowser.show(this.parentNode.getElementsByTagName('input')[0].id, '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show">
-    <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
-</a>
-<div class="fb-uploadfield{% if value and not value.exists %} error{% endif %}">
-    {% if value and not value.exists %}
-        <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
-    {% endif %}
-</div>
 {% if value.filetype == "Image" and value.exists %}
     {% version_object value.path final_attrs.ADMIN_THUMBNAIL as thumbnail_version %}
     {% if thumbnail_version %}
@@ -33,9 +22,18 @@
         </a>
     </p>
 {% endif %}
-{% if value and not value.exists %}
-    <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
-{% endif %}
+<input id="{{ final_attrs.id }}" type="hidden" class="vTextField vFileBrowseField vFileBrowseField{% if final_attrs.class %} {{ final_attrs.class }}{% endif %}" name="{{ final_attrs.name }}" value="{{ value.path }}" />
+<div class="fb-uploadfield{% if value and not value.exists %} error{% endif %}">
+    <span id="txt_{{ final_attrs.id }}">{{ value.filename }}</span>
+    <div id="{{ final_attrs.id }}-uploader" class="fb-uploader-container"></div>
+    <a href="javascript:FileBrowser.show('{{ final_attrs.id }}', '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show"></a>
+    <a href="#" onclick="FileBrowser.show(this.parentNode.getElementsByTagName('input')[0].id, '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show">
+        <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
+    </a>
+    {% if value and not value.exists %}
+        <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
+    {% endif %}
+</div>
 <script type="text/javascript">
     (function($){
         $(document).ready(function() {
@@ -80,9 +78,9 @@
                 params: { 'csrf_token': '{{ csrf_token }}',
                           'csrf_name': 'csrfmiddlewaretoken',
                           'csrf_xname': 'X-CSRFToken',
-                          'temporary': 'false',
+                          'temporary': 'true',
                           'filebrowser_directory': '{{ final_attrs.filebrowser_directory }}',
-                          'folder': '{{ final_attrs.upload_to }}'},
+                          'folder': '{{ final_attrs.temp_upload_dir }}'},
 
                 minSizeLimit: 0,
                 debug: false,
@@ -106,8 +104,15 @@
                 onComplete: function(id, fileName, resp){
                     if (resp.success) {
                         $(this.element).find('.progress-bar').fadeOut();
-                        $('#{{ final_attrs.id }}').val(this.params.filebrowser_directory + this.params.folder + resp.filename);
-                        $('#{{ final_attrs.id }}').parent().find('p.preview img').attr('src', resp.admin_thumbnail_url);
+                        $('#{{ final_attrs.id }}').val(resp.temp_filename);
+                        $('#txt_{{ final_attrs.id }}').text(resp.filename);
+                        var previewContainer = $('#{{ final_attrs.id }}').parent().find('p.preview');
+                        window.bob = $('#{{ final_attrs.id }}');
+                        var html = '<a href="' + resp.url + '" target="_blank" id="previewlink_{{ final_attrs.id }}">' +
+                            '<img id="previewimage_{{ final_attrs.id }}" src="' + resp.admin_thumbnail_url + '" class="preview">' +
+                        '</a>';
+                        var previewImg = previewContainer.html(html);
+                        previewImg.attr('src', resp.admin_thumbnail_url);
                     }
                 },
                 showMessage: function(message){ alert(message); }

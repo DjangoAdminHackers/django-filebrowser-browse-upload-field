@@ -4,12 +4,16 @@
 import os
 
 # DJANGO IMPORTS
+from django.conf import settings
 from django.core import urlresolvers
+from django.core.files.move import file_move_safe
+from django.core.files.storage import get_storage_class
 from django.db import models
 from django.db.models.fields import CharField
 from django import forms
 from django.forms.widgets import Input
 from django.template.loader import render_to_string
+from django.utils.encoding import smart_text
 from django.utils.six import with_metaclass
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.admin.templatetags.admin_static import static
@@ -109,7 +113,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         self.extensions = kwargs.pop('extensions', '')
         self.format = kwargs.pop('format', '')
         self.upload_to = kwargs.pop('upload_to', '')
-        self.temp_upload_dir = kwargs.pop('temp_upload_dir', '')
+        self.temp_upload_dir = kwargs.pop('temp_upload_dir', '') or UPLOAD_TEMPDIR
         return super(FileBrowseAndUploadField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
@@ -152,7 +156,44 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
             'temp_upload_dir': self.temp_upload_dir
         }
         return super(FileBrowseAndUploadField, self).formfield(**defaults)
+    
+    def upload_callback(self, sender, instance, created, using, **kwargs):
 
+        opts = instance._meta
+        fields = [f.name for f in opts.fields]
+        
+        if "image" in fields and instance.image:
+            
+            try:
+                filename = os.path.basename(smart_text(instance.image)).split("__")[1]
+            except:
+                filename = os.path.basename(smart_text(instance.image))
+            
+            upload_to = opts.get_field("image").upload_to
+            
+            if getattr(upload_to, '__call__'):
+                upload_to = upload_to(instance, filename)
+            
+            if self.temp_upload_dir in instance.image.path:
+                new_file = get_storage_class()().get_available_name(os.path.join(settings.MEDIA_ROOT, upload_to))
+                new_path = os.path.split(new_file)[0]
+                if not os.path.isdir(new_path):
+                    os.makedirs(new_path)
+                    os.chmod(new_path, 0775)
+                file_move_safe(os.path.join(settings.MEDIA_ROOT, instance.image.path), new_file, allow_overwrite=False)
+                os.chmod(new_file, 0775)
+                instance.image = new_file.replace(settings.MEDIA_ROOT + "/", "")
+                instance.save()
+                
+                # now generate all versions for this image
+                for v in settings.FILEBROWSER_VERSIONS:
+                    version = instance.image.version_generate(v)
+                    os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0775)
+    
+    def contribute_to_class(self, cls, name):
+        models.signals.post_save.connect(self.upload_callback, sender=cls)
+        super(FileBrowseAndUploadField, self).contribute_to_class(cls, name)
+        
 
 try:
     from south.modelsinspector import add_introspection_rules
