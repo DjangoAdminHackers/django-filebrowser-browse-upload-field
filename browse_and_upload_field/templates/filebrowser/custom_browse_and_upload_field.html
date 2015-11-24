@@ -34,7 +34,7 @@
         <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
     {% endif %}
 </div>
-<script type="text/javascript">
+<script>
     (function($){
         $(document).ready(function() {
             var uploader = new qq.FileUploader({
@@ -107,12 +107,9 @@
                         $('#{{ final_attrs.id }}').val(resp.temp_filename);
                         $('#txt_{{ final_attrs.id }}').text(resp.filename);
                         var previewContainer = $('#{{ final_attrs.id }}').parent().find('p.preview');
-                        window.bob = $('#{{ final_attrs.id }}');
-                        var html = '<a href="' + resp.url + '" target="_blank" id="previewlink_{{ final_attrs.id }}">' +
-                            '<img id="previewimage_{{ final_attrs.id }}" src="' + resp.admin_thumbnail_url + '" class="preview">' +
-                        '</a>';
-                        var previewImg = previewContainer.html(html);
-                        previewImg.attr('src', resp.admin_thumbnail_url);
+                        previewContainer.find('a').attr('href', resp.url);
+                        previewContainer.find('img').attr('src', resp.admin_thumbnail_url);
+                        previewContainer.show();
                     }
                 },
                 showMessage: function(message){ alert(message); }

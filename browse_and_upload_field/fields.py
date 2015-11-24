@@ -170,12 +170,19 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                 filename = os.path.basename(smart_text(instance.image))
             
             upload_to = opts.get_field("image").upload_to
+            filebrowser_directory = opts.get_field("image").directory or self.site.directory
             
             if getattr(upload_to, '__call__'):
                 upload_to = upload_to(instance, filename)
             
             if self.temp_upload_dir in instance.image.path:
-                new_file = get_storage_class()().get_available_name(os.path.join(settings.MEDIA_ROOT, upload_to))
+                new_file = get_storage_class()().get_available_name(
+                    os.path.join(
+                        settings.MEDIA_ROOT,
+                        filebrowser_directory,
+                        upload_to,
+                    )
+                )
                 new_path = os.path.split(new_file)[0]
                 if not os.path.isdir(new_path):
                     os.makedirs(new_path)
