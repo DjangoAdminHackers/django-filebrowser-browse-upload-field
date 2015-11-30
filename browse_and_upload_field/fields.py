@@ -172,8 +172,8 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
             upload_to = opts.get_field("image").upload_to
             filebrowser_directory = opts.get_field("image").directory or self.site.directory
             
-            if getattr(upload_to, '__call__'):
-                upload_to = upload_to(instance, filename)
+            if getattr(upload_to, '__call__', None):
+                upload_to = os.path.split(upload_to(instance, filename))[0]
             
             if self.temp_upload_dir in instance.image.path:
                 new_file = get_storage_class()().get_available_name(
@@ -181,6 +181,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                         settings.MEDIA_ROOT,
                         filebrowser_directory,
                         upload_to,
+                        filename,
                     )
                 )
                 new_path = os.path.split(new_file)[0]
@@ -202,8 +203,6 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         super(FileBrowseAndUploadField, self).contribute_to_class(cls, name)
         
 
-try:
+if 'south' in settings.INSTALLED_APPS:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([], ["^filebrowser\.fields\.FileBrowseAndUploadField"])
-except:
-    pass
