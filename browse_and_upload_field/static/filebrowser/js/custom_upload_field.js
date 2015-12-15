@@ -134,10 +134,13 @@
             
             var $el = $(element);
             var $container = $el.find('.fb-uploader-container');
-            var inlineRowCount = $container.closest('.inline-group').find('.form-row').not('.empty-form').length - 1;
+            var inlineRowCount = $container.closest('.inline-group')
+                    .find('.inline-related').length - 2; // 0 indexed, another -1 for the empty form
             
             var inputId = $container.data('input-id');
-            $container.data('input-id', inputId.replace('__prefix__', inlineRowCount));
+            var newInputId = inputId.replace('__prefix__', inlineRowCount);
+            $container.data('input-id', newInputId);
+            $container.attr('data-input-id', newInputId); // Also keep the DOM in sync or else it's confusing as hell
             
             var id = $container.attr('id');
             $container.attr('id', id.replace('__prefix__', inlineRowCount));
