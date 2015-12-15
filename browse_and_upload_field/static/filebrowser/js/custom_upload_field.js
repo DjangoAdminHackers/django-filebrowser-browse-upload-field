@@ -131,14 +131,12 @@
         // Hooking into the add-row click was unreliable and the only other options were timeout polling
         // For Django 1.9+ we can use https://code.djangoproject.com/ticket/15760 instead
         insertionQ('.fb-uploadfield').every(function(element){
-            
             var $el = $(element);
-            var container = $el.find('.fb-uploader-container');
-            var inlineRowCount = container.closest('.inline-group').find('.form-row').not('.empty-form').length - 1;
-            var inputId = container.data('input-id');
-            container.data('input-id', inputId.replace('__prefix__', inlineRowCount));
-            initUploader(container);
-            
+            var $container = $el.find('.fb-uploader-container');
+            var inlineRowCount = $container.closest('.inline-group').find('.form-row').not('.empty-form').length - 1;
+            var inputId = $container.data('input-id');
+            $container.data('input-id', inputId.replace('__prefix__', inlineRowCount));
+            initUploader($container);
         });        
         
         $('.fb-uploader-container').each(function(index) {
