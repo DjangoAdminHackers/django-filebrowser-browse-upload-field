@@ -120,9 +120,9 @@
             });
 
             // Fix error in django.formset.js caused by the hidden uploader input with no id
-            var container = $el.closest('.fb-uploadfield');
-            var id = container.find('.vFileBrowseField').get(-1).id;
-            container.find('.fb-upload-button input').attr('id', id + '-uploadInput');
+            var $container = $el.closest('.fb-uploadfield');
+            var id = $container.find('.vFileBrowseField').get(-1).id;
+            $container.find('.fb-upload-button input').attr('id', id + '-uploadInput');
 
         }
         
@@ -131,12 +131,19 @@
         // Hooking into the add-row click was unreliable and the only other options were timeout polling
         // For Django 1.9+ we can use https://code.djangoproject.com/ticket/15760 instead
         insertionQ('.fb-uploadfield').every(function(element){
+            
             var $el = $(element);
             var $container = $el.find('.fb-uploader-container');
             var inlineRowCount = $container.closest('.inline-group').find('.form-row').not('.empty-form').length - 1;
+            
             var inputId = $container.data('input-id');
             $container.data('input-id', inputId.replace('__prefix__', inlineRowCount));
+            
+            var id = $container.attr('id');
+            $container.attr('id', id.replace('__prefix__', inlineRowCount));
+            
             initUploader($container);
+            
         });        
         
         $('.fb-uploader-container').each(function(index) {
