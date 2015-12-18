@@ -1,119 +1,75 @@
 {% load i18n fb_versions %}
 
-{% if value.filetype == "Image" and value.exists %}
+<div class="fb-cfield{% if value and not value.exists %} error{% endif %}">
+
+    <div class="progress-bar"><div class="content"></div></div>
+
+    {% if value and not value.exists %}
+        <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
+    {% endif %}
+
+</div>
+
+{% if value.filetype == "Image" %}
+    
     {% version_object value.path final_attrs.ADMIN_THUMBNAIL as thumbnail_version %}
+    
     {% if thumbnail_version %}
+        
         <p class="preview" id="preview_{{ final_attrs.id }}">
             <a href="{{ value.url }}" target="_blank" id="previewlink_{{ final_attrs.id }}">
                 <img id="previewimage_{{ final_attrs.id }}" src="{{ thumbnail_version.url }}" class="preview" />
             </a>
         </p>
+        
     {% else %}
+        
         <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
             <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
                 <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
             </a>
         </p>
+        
     {% endif %}
+    
 {% else %}
+    
     <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
         <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
             <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
         </a>
     </p>
+
 {% endif %}
-<input id="{{ final_attrs.id }}" type="hidden" class="vTextField vFileBrowseField vFileBrowseField{% if final_attrs.class %} {{ final_attrs.class }}{% endif %}" name="{{ final_attrs.name }}" value="{{ value.path }}" />
+
 <div class="fb-uploadfield{% if value and not value.exists %} error{% endif %}">
-    <span id="txt_{{ final_attrs.id }}">{{ value.filename }}</span>
-    <div id="{{ final_attrs.id }}-uploader" class="fb-uploader-container"></div>
-    <a href="javascript:FileBrowser.show('{{ final_attrs.id }}', '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show"></a>
-    <a href="#" onclick="FileBrowser.show(this.parentNode.getElementsByTagName('input')[0].id, '{{ url }}?pop=1{% if final_attrs.directory %}&amp;dir={{ final_attrs.directory|urlencode|urlencode }}{% endif %}{% if final_attrs.format %}&amp;type={{ final_attrs.format }}{% endif %}');" class="fb_show">
+
+    <input
+        id="{{ final_attrs.id }}"
+        type="hidden"
+        class="vTextField vFileBrowseField vFileBrowseField {{ final_attrs.class }}"
+        name="{{ final_attrs.name }}"
+        value="{{ value.path }}" />
+
+    <span id="{{ final_attrs.id }}-textLabel">{{ value.filename }}</span>
+
+    <div
+        id="{{ final_attrs.id }}-uploader"
+        class="fb-uploader-container"
+        data-action='{% url "filebrowser:fb_do_upload" %}'
+        data-csrf-token = '{{ csrf_token }}'
+        data-directory="{{ final_attrs.directory|urlencode|urlencode }}"
+        data-folder='{{ final_attrs.temp_upload_dir }}'
+        data-format="{{ final_attrs.format }}"
+        data-input-id="{{ final_attrs.id }}"
+        data-title='{% trans "Upload a file" %}'
+        data-url="{{ url }}"></div>
+    <a href="javascript:void(0)" id="{{ final_attrs.id }}-fb_show">
         <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
     </a>
+
     {% if value and not value.exists %}
         <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
     {% endif %}
+
 </div>
-<script>
-    (function($){
-        $(document).ready(function() {
-            var uploader = new qq.FileUploader({
-                element: $('#{{ final_attrs.id }}-uploader').get(0),
-                action: '{% url "filebrowser:fb_do_upload" %}',
-
-                template: '<div class="fb-uploader">' +
-                        '<div class="fb-upload-list"></div>' +
-                        '<a href="javascript://" class="fb-upload-button" title="{% trans "Upload a file" %}">&nbsp;</a>' +
-                        '<div class="fb-upload-drop-area"><span>Drop files here to upload</span></div>' +
-                    '</div>',
-
-                // template for one item in file list
-                fileTemplate: '<div class="fb-upload-item">' +
-                        '<span class="fb-upload-file"></span>' +
-                        '<span class="fb-upload-spinner">&nbsp;</span>' +
-                        '<span class="fb-upload-size"></span>' +
-                        '<a class="fb-upload-cancel" href="#"></a>' +
-                        '<span class="fb-upload-failed-text"></span>' +
-                        '<div class="progress-bar"><div class="content"></div></div>' +
-                    '</div>',
-
-                classes: {
-                    // used to get elements from templates
-                    button: 'fb-upload-button',
-                    drop: 'fb-upload-drop-area',
-                    dropActive: 'fb-upload-drop-area-active',
-                    list: 'fb-upload-list',
-
-                    file: 'fb-upload-file',
-                    spinner: 'fb-upload-spinner',
-                    size: 'fb-upload-size',
-                    cancel: 'fb-upload-cancel',
-
-                    // added to list item when upload completes
-                    // used in css to hide progress spinner
-                    success: 'fb-upload-success',
-                    fail: 'fb-upload-fail'
-                },
-
-                params: { 'csrf_token': '{{ csrf_token }}',
-                          'csrf_name': 'csrfmiddlewaretoken',
-                          'csrf_xname': 'X-CSRFToken',
-                          'temporary': 'true',
-                          'filebrowser_directory': '{{ final_attrs.filebrowser_directory }}',
-                          'folder': '{{ final_attrs.temp_upload_dir }}'},
-
-                minSizeLimit: 0,
-                debug: false,
-
-                getItem: function(id) {
-                    var items = $(this.element).find('.fb-upload-file').get();
-                    var item = items.pop();
-
-                    while (typeof item != "undefined") {
-                        if (item.qqFileId == id) {
-                            return $(item);
-                        }
-                        item = items.pop();
-                    }
-                },
-                onProgress: function(id, fileName, loaded, total){
-                    var bar = $(this.element).find('.progress-bar .content');
-                    var new_width = '' + (loaded/total * 100) + '%';
-                    bar.css('width', new_width);
-                },
-                onComplete: function(id, fileName, resp){
-                    if (resp.success) {
-                        $(this.element).find('.progress-bar').fadeOut();
-                        $('#{{ final_attrs.id }}').val(resp.temp_filename);
-                        $('#txt_{{ final_attrs.id }}').text(resp.filename);
-                        var previewContainer = $('#{{ final_attrs.id }}').parent().find('p.preview');
-                        previewContainer.find('a').attr('href', resp.url);
-                        previewContainer.find('img').attr('src', resp.admin_thumbnail_url);
-                        previewContainer.show();
-                    }
-                },
-                showMessage: function(message){ alert(message); }
-            });
-        });
-    })(django.jQuery);
-</script>

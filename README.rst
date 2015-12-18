@@ -15,4 +15,4 @@ Installation
 * from browse_and_upload_field.fields import FileBrowseAndUploadField
 * Use in the same way as the existing FileBrowseField and UploadField
 
-    my_image = FileBrowseAndUploadField(max_length=512, null=True, blank=True, format="image", directory='images', upload_to='images')
+    my_image = FileBrowseAndUploadField(null=True, blank=True, format="image", directory='images', upload_to='images')

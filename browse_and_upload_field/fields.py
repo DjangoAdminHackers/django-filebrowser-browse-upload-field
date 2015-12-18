@@ -31,9 +31,13 @@ class FileBrowseAndUploadWidget(Input):
         js = (
             'filebrowser/js/AddFileBrowser.js',
             'filebrowser/js/fileuploader.js',
+            'filebrowser/js/insQ.js',
+            'filebrowser/js/custom_upload_field.js',
         )
         css = {
-            'all': (os.path.join('/static/filebrowser/css/uploadfield.css'),)
+            'all': (
+                'filebrowser/css/uploadfield.css',
+            )
         }
 
     def __init__(self, attrs=None):
@@ -59,7 +63,7 @@ class FileBrowseAndUploadWidget(Input):
         final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
         final_attrs['search_icon'] = static('filebrowser/img/filebrowser_icon_show.gif')
         final_attrs['url'] = url
-        final_attrs['directory'] = self.directory
+        final_attrs['directory'] = self.directory or self.upload_to
         final_attrs['filebrowser_directory'] = self.site.directory
         final_attrs['extensions'] = self.extensions
         final_attrs['format'] = self.format
@@ -67,10 +71,11 @@ class FileBrowseAndUploadWidget(Input):
         final_attrs['temp_upload_dir'] = UPLOAD_TEMPDIR
         final_attrs['ADMIN_THUMBNAIL'] = ADMIN_THUMBNAIL
         filebrowser_site = self.site
-        if value != "":
+        if value:
+            # If we have an image then filebrowser should open to that directory rather than the default
             try:
                 final_attrs['directory'] = os.path.split(value.original.path_relative_directory)[0]
-            except:
+            except Exception:
                 pass
         return render_to_string("filebrowser/custom_browse_and_upload_field.html", locals())
 
@@ -114,6 +119,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         self.format = kwargs.pop('format', '')
         self.upload_to = kwargs.pop('upload_to', '')
         self.temp_upload_dir = kwargs.pop('temp_upload_dir', '') or UPLOAD_TEMPDIR
+        kwargs['max_length'] = kwargs.get('max_length', False) or 255 
         return super(FileBrowseAndUploadField, self).__init__(*args, **kwargs)
 
     def to_python(self, value):
@@ -158,22 +164,18 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         return super(FileBrowseAndUploadField, self).formfield(**defaults)
     
     def upload_callback(self, sender, instance, created, using, **kwargs):
-
+        
         opts = instance._meta
         fields = [f.name for f in opts.fields]
         
-        if "image" in fields and instance.image:
+        if "image" in fields and instance.image:  # TODO this hardcodes 'image' as the field name
             
-            try:
-                filename = os.path.basename(smart_text(instance.image)).split("__")[1]
-            except:
-                filename = os.path.basename(smart_text(instance.image))
-            
+            filename = os.path.basename(smart_text(instance.image))
             upload_to = opts.get_field("image").upload_to
-            filebrowser_directory = opts.get_field("image").directory or self.site.directory
+            filebrowser_directory = self.site.directory
             
-            if getattr(upload_to, '__call__'):
-                upload_to = upload_to(instance, filename)
+            if getattr(upload_to, '__call__', None):
+                upload_to = os.path.split(upload_to(instance, filename))[0]
             
             if self.temp_upload_dir in instance.image.path:
                 new_file = get_storage_class()().get_available_name(
@@ -181,6 +183,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                         settings.MEDIA_ROOT,
                         filebrowser_directory,
                         upload_to,
+                        filename,
                     )
                 )
                 new_path = os.path.split(new_file)[0]
@@ -202,8 +205,6 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         super(FileBrowseAndUploadField, self).contribute_to_class(cls, name)
         
 
-try:
+if 'south' in settings.INSTALLED_APPS:
     from south.modelsinspector import add_introspection_rules
     add_introspection_rules([], ["^filebrowser\.fields\.FileBrowseAndUploadField"])
-except:
-    pass
