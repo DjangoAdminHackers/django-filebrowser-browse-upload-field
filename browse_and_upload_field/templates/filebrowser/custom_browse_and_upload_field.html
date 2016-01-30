@@ -1,75 +1,66 @@
 {% load i18n fb_versions %}
 
-<div class="fb-cfield{% if value and not value.exists %} error{% endif %}">
+<div class="fb-browseuploadfieldwrapper">
+     
+    <div class="fb-cfield{% if value and not value.exists %} error{% endif %}">
+        <div class="progress-bar"><div class="content"></div></div>
+        {% if value and not value.exists %}
+            <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
+        {% endif %}
+    </div>
 
-    <div class="progress-bar"><div class="content"></div></div>
-
-    {% if value and not value.exists %}
-        <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
-    {% endif %}
-
-</div>
-
-{% if value.filetype == "Image" %}
-    
-    {% version_object value.path final_attrs.ADMIN_THUMBNAIL as thumbnail_version %}
-    
-    {% if thumbnail_version %}
-        
-        <p class="preview" id="preview_{{ final_attrs.id }}">
-            <a href="{{ value.url }}" target="_blank" id="previewlink_{{ final_attrs.id }}">
-                <img id="previewimage_{{ final_attrs.id }}" src="{{ thumbnail_version.url }}" class="preview" />
-            </a>
-        </p>
-        
+    {% if value.filetype == "Image" %}
+        {% version_object value.path final_attrs.ADMIN_THUMBNAIL as thumbnail_version %}
+        {% if thumbnail_version %}
+            <p class="preview" id="preview_{{ final_attrs.id }}">
+                <a href="{{ value.url }}" target="_blank" id="previewlink_{{ final_attrs.id }}">
+                    <img id="previewimage_{{ final_attrs.id }}" src="{{ thumbnail_version.url }}" class="preview" />
+                </a>
+            </p>
+        {% else %}
+            <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
+                <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
+                    <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
+                </a>
+            </p>
+        {% endif %}
     {% else %}
-        
         <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
             <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
-                <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
-            </a>
-        </p>
-        
-    {% endif %}
-    
-{% else %}
-    
-    <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
-        <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
             <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
         </a>
-    </p>
+        </p>
+    {% endif %}
 
-{% endif %}
+    <div class="fb-uploadfield{% if value and not value.exists %} error{% endif %}">
 
-<div class="fb-uploadfield{% if value and not value.exists %} error{% endif %}">
+        <input
+            id="{{ final_attrs.id }}"
+            type="hidden"
+            class="vTextField vFileBrowseField vFileBrowseField {{ final_attrs.class }}"
+            name="{{ final_attrs.name }}"
+            value="{{ value.path }}" />
 
-    <input
-        id="{{ final_attrs.id }}"
-        type="hidden"
-        class="vTextField vFileBrowseField vFileBrowseField {{ final_attrs.class }}"
-        name="{{ final_attrs.name }}"
-        value="{{ value.path }}" />
+        <span id="{{ final_attrs.id }}-textLabel">{{ value.filename }}</span>
 
-    <span id="{{ final_attrs.id }}-textLabel">{{ value.filename }}</span>
-
-    <div
-        id="{{ final_attrs.id }}-uploader"
-        class="fb-uploader-container"
-        data-action='{% url "filebrowser:fb_do_upload" %}'
-        data-csrf-token = '{{ csrf_token }}'
-        data-directory="{{ final_attrs.directory|urlencode|urlencode }}"
-        data-folder='{{ final_attrs.temp_upload_dir }}'
-        data-format="{{ final_attrs.format }}"
-        data-input-id="{{ final_attrs.id }}"
-        data-title='{% trans "Upload a file" %}'
-        data-url="{{ url }}"></div>
-    <a href="javascript:void(0)" id="{{ final_attrs.id }}-fb_show">
+        <div
+            id="{{ final_attrs.id }}-uploader"
+            class="fb-uploader-container"
+            data-action='{% url "filebrowser:fb_do_upload" %}'
+            data-csrf-token = '{{ csrf_token }}'
+            data-directory="{{ final_attrs.directory|urlencode|urlencode }}"
+            data-folder='{{ final_attrs.temp_upload_dir }}'
+            data-format="{{ final_attrs.format }}"
+            data-input-id="{{ final_attrs.id }}"
+            data-title='{% trans "Upload a file" %}'
+            data-url="{{ url }}"></div>
+        <a href="javascript:void(0)" id="{{ final_attrs.id }}-fb_show">
         <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
     </a>
 
-    {% if value and not value.exists %}
-        <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
-    {% endif %}
+        {% if value and not value.exists %}
+            <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
+        {% endif %}
 
+    </div>
 </div>
