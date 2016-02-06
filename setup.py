@@ -12,6 +12,7 @@ setup(
         'browse_and_upload_field': [
             'templates/filebrowser/*.html',
             'static/filebrowser/js/*.js',
+            'static/filebrowser/css/*.css',
         ]
     },
     include_package_data=True,

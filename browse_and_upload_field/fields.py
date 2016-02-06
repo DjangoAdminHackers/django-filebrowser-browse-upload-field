@@ -36,7 +36,7 @@ class FileBrowseAndUploadWidget(Input):
         )
         css = {
             'all': (
-                'filebrowser/css/uploadfield.css',
+                'filebrowser/css/custom_browse_and_upload_field.css',
             )
         }
 
