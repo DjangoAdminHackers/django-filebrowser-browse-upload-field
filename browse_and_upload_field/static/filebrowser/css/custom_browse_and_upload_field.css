@@ -1,3 +1,11 @@
 .fb-browseuploadfieldwrapper {
     display: table-row;
 }
+
+.fb-uploader-container .fb-upload-list {
+    display: none;
+}
+
+.fb-uploader-container {
+    width: inherit;
+}
