@@ -131,7 +131,10 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
     def get_db_prep_value(self, value, connection, prepared=False):
         if not value:
             return value
-        return value.path
+        elif getattr(value, 'path', False):
+            return value.path
+        else:  # If we've passed a default then it will be just a string. Sometimes happens with migrations
+            return value
 
     def get_prep_value(self, value):
         if not value:
