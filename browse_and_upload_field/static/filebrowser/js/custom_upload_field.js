@@ -134,22 +134,20 @@
             
             var $el = $(element);
             var $container = $el.find('.fb-uploader-container');
-            var inlineRowCount = $container.closest('.inline-group')
-                    .find('.inline-related').length - 2; // 0 indexed, another -1 for the empty form
-            
+            var totalFormInput = $container.closest('.inline-group').find('input[id$="TOTAL_FORMS"]');
+            var nextRowIndex = totalFormInput.val() - 1;
             var inputId = $container.data('input-id');
-            var newInputId = inputId.replace('__prefix__', inlineRowCount);
+            var newInputId = inputId.replace('__prefix__', nextRowIndex);
             $container.data('input-id', newInputId);
             $container.attr('data-input-id', newInputId); // Also keep the DOM in sync or else it's confusing as hell
             
             var id = $container.attr('id');
-            $container.attr('id', id.replace('__prefix__', inlineRowCount));
+            $container.attr('id', id.replace('__prefix__', nextRowIndex));
             
             initUploader($container);
             
-        });        
-        
-        $('.fb-uploader-container').each(function(index) {
+        });
+        $('.inline-group > div.inline-related:not(.tabular):not(.empty-form), .inline-group tr:not(.empty-form)').find('.fb-uploader-container').each(function(index) {
             var $el = $(this);
             initUploader($el);
         });
