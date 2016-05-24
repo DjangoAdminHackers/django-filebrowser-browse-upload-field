@@ -147,11 +147,15 @@
             initUploader($container);
             
         });
-        $('.inline-group > div.inline-related:not(.tabular):not(.empty-form), .inline-group tr:not(.empty-form)').find('.fb-uploader-container').each(function(index) {
-            var $el = $(this);
-            initUploader($el);
-        });
 
+        $('form > div > fieldset')  // Non-inlines
+            .add('.inline-group > div.inline-related:not(.tabular):not(.empty-form)')  // Stacked inlines
+            .add('.inline-group tr:not(.empty-form)')  // Tabular inlines
+            .find('.fb-uploader-container')
+            .each(function(index) {
+                initUploader($(this));
+            });
+        
     });
     
 })(django.jQuery);
