@@ -105,6 +105,7 @@
                     if (resp.success) {
                         $(this.element).find('.progress-bar').fadeOut();
                         $('#' + id_prefix).val(resp.temp_filename);
+                        
                         $('#' + id_prefix + '-textLabel').text(resp.filename);
                         var previewContainer = $el.parent().parent().find('p.preview');
                         previewContainer.find('a').attr('href', resp.url);
@@ -126,27 +127,38 @@
 
         }
         
-        // See https://github.com/naugtur/insertionQuery
-        // Hook to run code after 'add another' has been used on inlines
-        // Hooking into the add-row click was unreliable and the only other options were timeout polling
-        // For Django 1.9+ we can use https://code.djangoproject.com/ticket/15760 instead
-        insertionQ('.fb-uploadfield').every(function(element){
+        function initInline(element) {
+            var $container = $(element).find('.fb-uploader-container');
+            initUploader($container);
+        }
+        
+        function initAddedInline(element) {
             
-            var $el = $(element);
-            var $container = $el.find('.fb-uploader-container');
+            var $container = $(element).find('.fb-uploader-container');
+            var $textLabel = $(element).find('.fb-uploader-textlabel');
+            var $preview = $(element).parent().find('.preview');
+
             var totalFormInput = $container.closest('.inline-group').find('input[id$="TOTAL_FORMS"]');
             var nextRowIndex = totalFormInput.val() - 1;
+
+            $container.attr('id', $container.attr('id').replace('__prefix__', nextRowIndex));
+            $textLabel.attr('id', $textLabel.attr('id').replace('__prefix__', nextRowIndex));
+            $preview.attr('id', $preview.attr('id').replace('__prefix__', nextRowIndex));
+
             var inputId = $container.data('input-id');
             var newInputId = inputId.replace('__prefix__', nextRowIndex);
             $container.data('input-id', newInputId);
             $container.attr('data-input-id', newInputId); // Also keep the DOM in sync or else it's confusing as hell
             
-            var id = $container.attr('id');
-            $container.attr('id', id.replace('__prefix__', nextRowIndex));
-            
             initUploader($container);
-            
-        });
+        }
+        
+        // See https://github.com/naugtur/insertionQuery
+        // Hook to run code after 'add another' has been used on inlines
+        // Hooking into the add-row click was unreliable and the only other options were timeout polling
+        // For Django 1.9+ we can use https://code.djangoproject.com/ticket/15760 instead
+        $('.fb-uploadfield').each(function(){initInline(this)});
+        insertionQ('.fb-uploadfield').every(initAddedInline);
 
         $('form > div > fieldset')  // Non-inlines
             .add('.inline-group > div.inline-related:not(.tabular):not(.empty-form)')  // Stacked inlines

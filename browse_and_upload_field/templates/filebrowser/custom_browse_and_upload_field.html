@@ -37,11 +37,11 @@
         <input
             id="{{ final_attrs.id }}"
             type="hidden"
-            class="vTextField vFileBrowseField vFileBrowseField {{ final_attrs.class }}"
+            class="vTextField vFileBrowseField {{ final_attrs.class }}"
             name="{{ final_attrs.name }}"
             value="{{ value.path }}" />
 
-        <span id="{{ final_attrs.id }}-textLabel">{{ value.filename }}</span>
+        <span id="{{ final_attrs.id }}-textLabel" class="fb-uploader-textlabel">{{ value.filename }}</span>
 
         <div
             id="{{ final_attrs.id }}-uploader"
