@@ -1,4 +1,4 @@
-{% load i18n fb_versions %}
+{% load i18n fb_versions staticfiles %}
 
 <div class="fb-browseuploadfieldwrapper">
      
@@ -25,10 +25,11 @@
             </p>
         {% endif %}
     {% else %}
+        {# We still need this markup present in case the file was a non-image but the user then uploads an image #}
         <p class="preview" id="preview_{{ final_attrs.id }}" style="display: none;">
             <a href="javascript://" target="_self" id="previewlink_{{ final_attrs.id }}">
-            <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
-        </a>
+                <img id="previewimage_{{ final_attrs.id }}" class="preview" src="" />
+            </a>
         </p>
     {% endif %}
 
@@ -41,7 +42,9 @@
             name="{{ final_attrs.name }}"
             value="{{ value.path }}" />
 
-        <span id="{{ final_attrs.id }}-textLabel" class="fb-uploader-textlabel">{{ value.filename }}</span>
+        <a href="{{ value.url }}" target="_blank">
+            <span id="{{ final_attrs.id }}-textLabel" class="fb-uploader-textlabel">{{ value.filename }}</span>
+        </a>
 
         <div
             id="{{ final_attrs.id }}-uploader"

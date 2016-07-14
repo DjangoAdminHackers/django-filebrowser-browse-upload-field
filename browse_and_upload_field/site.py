@@ -80,14 +80,21 @@ class CustomFileBrowserSite(FileBrowserSite):
 
             f = FileObject(smart_text(file_name), site=self)
             signals.filebrowser_post_upload.send(sender=request, path=folder, file=f, site=self)
-
-            # let Ajax Upload know whether we saved it or not
+            
+            # We don't know at this stage if it's an image
+            # so attempt to generate an admin thumb and catch the exception
+            try:
+                admin_thumbnail_url = f.version_generate(ADMIN_THUMBNAIL).url
+            except IOError:
+                admin_thumbnail_url = ''
+            
+            # Let Ajax Upload know whether we saved it or not
             ret_json = {
                 'success': True,
                 'filename': f.filename,
                 'temp_filename': temp_filename,
                 'url': f.url,
-                'admin_thumbnail_url': f.version_generate(ADMIN_THUMBNAIL).url,
+                'admin_thumbnail_url': admin_thumbnail_url,
             }
             return HttpResponse(json.dumps(ret_json), content_type="application/json")
 

@@ -91,10 +91,8 @@ class FileBrowseAndUploadFormField(forms.CharField):
         self.max_length, self.min_length = max_length, min_length
         self.site = kwargs.pop('filebrowser_site', site)
         self.directory = directory
-        self.extensions = extensions
-        if format:
-            self.format = format or ''
-            self.extensions = extensions or EXTENSIONS.get(format)
+        self.format = format or ''
+        self.extensions = extensions or EXTENSIONS.get(format.title())
         self.upload_to = upload_to
         self.temp_upload_dir = temp_upload_dir
         super(FileBrowseAndUploadFormField, self).__init__(*args, **kwargs)
@@ -170,18 +168,18 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
     def upload_callback(self, sender, instance, created, using, **kwargs):
         
         opts = instance._meta
-        fields = [f.name for f in opts.fields]
+        field = getattr(instance, self.name)
         
-        if "image" in fields and instance.image:  # TODO this hardcodes 'image' as the field name
+        if field:
             
-            filename = os.path.basename(smart_text(instance.image))
-            upload_to = opts.get_field("image").upload_to
+            filename = os.path.basename(smart_text(field))
+            upload_to = opts.get_field(self.name).upload_to
             filebrowser_directory = self.site.directory
             
             if getattr(upload_to, '__call__', None):
                 upload_to = os.path.split(upload_to(instance, filename))[0]
             
-            if self.temp_upload_dir in instance.image.path:
+            if self.temp_upload_dir in field.path:
                 new_file = get_storage_class()().get_available_name(
                     os.path.join(
                         settings.MEDIA_ROOT,
@@ -194,15 +192,17 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                 if not os.path.isdir(new_path):
                     os.makedirs(new_path)
                     os.chmod(new_path, 0775)
-                file_move_safe(os.path.join(settings.MEDIA_ROOT, instance.image.path), new_file, allow_overwrite=False)
+                file_move_safe(os.path.join(settings.MEDIA_ROOT, field.path), new_file, allow_overwrite=False)
                 os.chmod(new_file, 0775)
-                instance.image = new_file.replace(settings.MEDIA_ROOT + "/", "")
+                setattr(instance, self.name, new_file.replace(settings.MEDIA_ROOT + "/", ""))
                 instance.save()
                 
-                # now generate all versions for this image
-                for v in settings.FILEBROWSER_VERSIONS:
-                    version = instance.image.version_generate(v)
-                    os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0775)
+                # Now generate all versions if this is an image
+                if self.format.title() == 'Image':
+                    for v in settings.FILEBROWSER_VERSIONS:
+                        # Getattr again as the property has been changed
+                        version = getattr(instance, self.name).version_generate(v)
+                        os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0775)
     
     def contribute_to_class(self, cls, name):
         models.signals.post_save.connect(self.upload_callback, sender=cls)
