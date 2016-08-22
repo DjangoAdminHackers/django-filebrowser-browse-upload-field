@@ -1,6 +1,19 @@
 (function($){
     $(document).ready(function() {
-        
+
+        function showFB(id_prefix, url){
+                FileBrowser.show(
+                    id_prefix,
+                    url,
+                    function(){
+                        // Set the text label when the filebrowser window is closed
+                        var pathParts = $('#' + id_prefix).val().split('/');
+                        var filename = pathParts[pathParts.length -1 ];
+                        $('#' + id_prefix + '-textLabel').text(filename);
+                    }
+                );
+            }
+
         function initUploader($el) {
 
             var action = $el.data('action');
@@ -18,19 +31,15 @@
             if (format !== undefined) {
                 url += '&type=' + format;
             }
-            
-            $('#' + id_prefix + '-fb_show').click(function() {
-                
-                FileBrowser.show(
-                    id_prefix,
-                    url,
-                    function(){
-                        // Set the text label when the filebrowser window is closed
-                        var pathParts = $('#' + id_prefix).val().split('/');
-                        var filename = pathParts[pathParts.length -1 ];
-                        $('#' + id_prefix + '-textLabel').text(filename); 
-                    });
-            });
+
+            if (id_prefix.indexOf('__prefix__') == -1){ // do not add the event listener for empty inline
+                $('#' + id_prefix + '-fb_show').click(function(e){
+                    e.preventDefault();
+                    showFB(id_prefix, url);
+                    return false;
+                });
+            }
+
             var uploader = new qq.FileUploader({
 
                 element: $el[0],
@@ -131,26 +140,32 @@
             var $container = $(element).find('.fb-uploader-container');
             initUploader($container);
         }
-        
+
         function initAddedInline(element) {
-            
             var $container = $(element).find('.fb-uploader-container');
             var $textLabel = $(element).find('.fb-uploader-textlabel');
-            var $preview = $(element).parent().find('.preview');
+            var $preview = $(element).parent().find('p.preview');
+            var $preview_link = $preview.find('a');
+            var $preview_img = $preview_link.find('img');
+            var $fb_show_link = $(element).parent().find('.fb-show-link');
 
             var totalFormInput = $container.closest('.inline-group').find('input[id$="TOTAL_FORMS"]');
             var nextRowIndex = totalFormInput.val() - 1;
 
             $container.attr('id', $container.attr('id').replace('__prefix__', nextRowIndex));
             $textLabel.attr('id', $textLabel.attr('id').replace('__prefix__', nextRowIndex));
+            $preview_img.attr('id', $preview_img.attr('id').replace('__prefix__', nextRowIndex));
+            $preview_link.attr('id', $preview_link.attr('id').replace('__prefix__', nextRowIndex));
             $preview.attr('id', $preview.attr('id').replace('__prefix__', nextRowIndex));
+            $fb_show_link.attr('id', $fb_show_link.attr('id').replace('__prefix__', nextRowIndex));
 
             var inputId = $container.data('input-id');
             var newInputId = inputId.replace('__prefix__', nextRowIndex);
             $container.data('input-id', newInputId);
             $container.attr('data-input-id', newInputId); // Also keep the DOM in sync or else it's confusing as hell
-            
+
             initUploader($container);
+
         }
         
         // See https://github.com/naugtur/insertionQuery

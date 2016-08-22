@@ -1,7 +1,7 @@
 {% load i18n fb_versions staticfiles %}
 
 <div class="fb-browseuploadfieldwrapper">
-     
+
     <div class="fb-cfield{% if value and not value.exists %} error{% endif %}">
         <div class="progress-bar"><div class="content"></div></div>
         {% if value and not value.exists %}
@@ -56,10 +56,11 @@
             data-format="{{ final_attrs.format }}"
             data-input-id="{{ final_attrs.id }}"
             data-title='{% trans "Upload a file" %}'
-            data-url="{{ url }}"></div>
-        <a href="javascript:void(0)" id="{{ final_attrs.id }}-fb_show">
-        <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
-    </a>
+            data-url="{{ url }}">
+        </div>
+        <a href="javascript:void(0)" id="{{ final_attrs.id }}-fb_show" class="fb-show-link">
+            <img src="{{ final_attrs.search_icon }}" alt="{% trans "Change" %}" />
+        </a>
 
         {% if value and not value.exists %}
             <ul class="errorlist"><li>{% trans "File not found" %}</li></ul>
