@@ -165,7 +165,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         }
         return super(FileBrowseAndUploadField, self).formfield(**defaults)
     
-    def upload_callback(self, sender, instance, created, using, **kwargs):
+    def upload_callback(self, sender, instance, **kwargs):
         
         opts = instance._meta
         field = getattr(instance, self.name)
