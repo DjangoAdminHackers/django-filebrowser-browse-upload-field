@@ -113,8 +113,8 @@
                 onComplete: function(id, fileName, resp){
                     if (resp.success) {
                         $(this.element).find('.progress-bar').fadeOut();
-                        $('#' + id_prefix).val(resp.temp_filename);
-                        
+                        $('#' + id_prefix).val(resp.uploaded_filename);
+
                         $('#' + id_prefix + '-textLabel').text(resp.filename);
                         var previewContainer = $el.parent().parent().find('p.preview');
                         previewContainer.find('a').attr('href', resp.url);

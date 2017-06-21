@@ -87,7 +87,9 @@ class CustomFileBrowserSite(FileBrowserSite):
                 admin_thumbnail_url = f.version_generate(ADMIN_THUMBNAIL).url
             except IOError:
                 admin_thumbnail_url = ''
-            
+
+            uploaded_filename = os.path.join(folder, f.filename)
+
             # Let Ajax Upload know whether we saved it or not
             ret_json = {
                 'success': True,
@@ -95,6 +97,7 @@ class CustomFileBrowserSite(FileBrowserSite):
                 'temp_filename': temp_filename,
                 'url': f.url,
                 'admin_thumbnail_url': admin_thumbnail_url,
+                'uploaded_filename': uploaded_filename,
             }
             return HttpResponse(json.dumps(ret_json), content_type="application/json")
 
