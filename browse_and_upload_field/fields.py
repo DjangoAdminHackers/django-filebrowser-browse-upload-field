@@ -171,8 +171,8 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
         field = getattr(instance, self.name)
         
         if field:
-            
-            filename = os.path.basename(smart_text(field))
+
+            filename = os.path.basename(smart_text(field.filename))
             upload_to = opts.get_field(self.name).upload_to
             filebrowser_directory = self.site.directory
             
