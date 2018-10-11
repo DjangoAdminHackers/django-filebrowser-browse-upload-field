@@ -191,9 +191,9 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                 new_path = os.path.split(new_file)[0]
                 if not os.path.isdir(new_path):
                     os.makedirs(new_path)
-                    os.chmod(new_path, 0775)
+                    os.chmod(new_path, 0o775)
                 file_move_safe(os.path.join(settings.MEDIA_ROOT, field.path), new_file, allow_overwrite=False)
-                os.chmod(new_file, 0775)
+                os.chmod(new_file, 0o775)
                 setattr(instance, self.name, new_file.replace(settings.MEDIA_ROOT + "/", ""))
                 instance.save()
                 
@@ -202,7 +202,7 @@ class FileBrowseAndUploadField(with_metaclass(models.SubfieldBase, CharField)):
                     for v in settings.FILEBROWSER_VERSIONS:
                         # Getattr again as the property has been changed
                         version = getattr(instance, self.name).version_generate(v)
-                        os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0775)
+                        os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0o775)
     
     def contribute_to_class(self, cls, name):
         models.signals.post_save.connect(self.upload_callback, sender=cls)
