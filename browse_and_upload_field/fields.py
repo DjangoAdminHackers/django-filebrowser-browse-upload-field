@@ -110,7 +110,7 @@ class FileBrowseAndUploadWidget(Input):
             value = ""
         if value != "" and not isinstance(value, FileObject):
             value = FileObject(value, site=self.site)
-        final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
+        final_attrs = self.build_attrs(self.attrs, attrs)
         final_attrs['search_icon'] = static('filebrowser/img/filebrowser_icon_show.gif')
         final_attrs['url'] = url
         final_attrs['directory'] = self.directory or self.upload_to
@@ -148,7 +148,7 @@ class FileBrowseAndUploadFormField(forms.CharField):
 
     def clean(self, value):
         value = super(FileBrowseAndUploadFormField, self).clean(value)
-        if value == '':
+        if not value:
             return value
         file_extension = os.path.splitext(value)[1].lower()
         if self.extensions and file_extension not in self.extensions:
