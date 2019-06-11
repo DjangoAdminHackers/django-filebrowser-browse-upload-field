@@ -3,6 +3,8 @@
 # PYTHON IMPORTS
 import os
 
+from django.utils.six import string_types
+
 # DJANGO IMPORTS
 from django.conf import settings
 from django.core import urlresolvers
@@ -17,60 +19,12 @@ from django.utils.encoding import smart_text
 from django.utils.six import with_metaclass
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.admin.templatetags.admin_static import static
+from django.contrib.admin.options import FORMFIELD_FOR_DBFIELD_DEFAULTS
 
 # FILEBROWSER IMPORTS
-from filebrowser.settings import UPLOAD_TEMPDIR, ADMIN_THUMBNAIL, EXTENSIONS
 from filebrowser.base import FileObject
+from filebrowser.settings import ADMIN_THUMBNAIL, EXTENSIONS, UPLOAD_TEMPDIR
 from filebrowser.sites import site
-
-
-class SubfieldBase(type):
-    """
-    A metaclass for custom Field subclasses. This ensures the model's attribute
-    has the descriptor protocol attached to it.
-    """
-    def __new__(cls, name, bases, attrs):
-
-        new_class = super(SubfieldBase, cls).__new__(cls, name, bases, attrs)
-        new_class.contribute_to_class = make_contrib(
-            new_class, attrs.get('contribute_to_class')
-        )
-        return new_class
-
-
-class Creator(object):
-    """
-    A placeholder class that provides a way to set the attribute on the model.
-    """
-    def __init__(self, field):
-        self.field = field
-
-    def __get__(self, obj, type=None):
-        if obj is None:
-            return self
-        return obj.__dict__[self.field.name]
-
-    def __set__(self, obj, value):
-        obj.__dict__[self.field.name] = self.field.to_python(value)
-
-
-def make_contrib(superclass, func=None):
-    """
-    Returns a suitable contribute_to_class() method for the Field subclass.
-
-    If 'func' is passed in, it is the existing contribute_to_class() method on
-    the subclass and it is called before anything else. It is assumed in this
-    case that the existing contribute_to_class() calls all the necessary
-    superclass methods.
-    """
-    def contribute_to_class(self, cls, name, **kwargs):
-        if func:
-            func(self, cls, name, **kwargs)
-        else:
-            super(superclass, self).contribute_to_class(cls, name, **kwargs)
-        setattr(cls, self.name, Creator(self))
-
-    return contribute_to_class
 
 
 class FileBrowseAndUploadWidget(Input):
@@ -92,7 +46,9 @@ class FileBrowseAndUploadWidget(Input):
 
     def __init__(self, attrs=None):
         super(FileBrowseAndUploadWidget, self).__init__(attrs)
-        self.site = attrs.get('filebrowser_site', '')
+        self.site = attrs.get('filebrowser_site', None)
+        #self.site = attrs.get('site', '')
+        print(self.site)
         self.directory = attrs.get('directory', '')
         self.extensions = attrs.get('extensions', '')
         self.format = attrs.get('format', '')
@@ -104,13 +60,13 @@ class FileBrowseAndUploadWidget(Input):
             self.attrs = {}
         super(FileBrowseAndUploadWidget, self).__init__(attrs)
 
-    def render(self, name, value, attrs=None):
+    def render(self, name, value, attrs=None, renderer=None):
         url = urlresolvers.reverse(self.site.name + ":fb_browse")
         if value is None:
             value = ""
         if value != "" and not isinstance(value, FileObject):
             value = FileObject(value, site=self.site)
-        final_attrs = self.build_attrs(self.attrs, attrs)
+        final_attrs = self.build_attrs(attrs, type=self.input_type, name=name)
         final_attrs['search_icon'] = static('filebrowser/img/filebrowser_icon_show.gif')
         final_attrs['url'] = url
         final_attrs['directory'] = self.directory or self.upload_to
@@ -129,7 +85,13 @@ class FileBrowseAndUploadWidget(Input):
                 pass
         return render_to_string("filebrowser/custom_browse_and_upload_field.html", locals())
 
-
+    def build_attrs(self, extra_attrs=None, **kwargs):
+        "Helper function for building an attribute dictionary."
+        attrs = dict(self.attrs, **kwargs)
+        if extra_attrs:
+            attrs.update(extra_attrs)
+        return attrs
+    
 class FileBrowseAndUploadFormField(forms.CharField):
 
     default_error_messages = {
@@ -156,7 +118,7 @@ class FileBrowseAndUploadFormField(forms.CharField):
         return value
 
 
-class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
+class FileBrowseAndUploadField(CharField):
 
     description = "FileBrowseAndUploadField"
 
@@ -175,6 +137,9 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
             return value
         return FileObject(value, site=self.site)
 
+    def from_db_value(self, value, expression, connection, context):
+        return self.to_python(value)
+
     def get_db_prep_value(self, value, connection, prepared=False):
         if not value:
             return value
@@ -184,18 +149,20 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
             return value
 
     def get_prep_value(self, value):
-        if not value:
+        if not value or isinstance(value, string_types):
             return value
         return value.path
 
     def value_to_string(self, obj):
-        value = self._get_val_from_obj(obj)
+        value = self.value_from_object(obj)
         if not value:
             return value
         return value.path
 
     def formfield(self, **kwargs):
+        widget_class = kwargs.get('widget', FileBrowseAndUploadWidget)
         attrs = {}
+        attrs["site"] = self.site
         attrs["filebrowser_site"] = self.site
         attrs["directory"] = self.directory
         attrs["extensions"] = self.extensions
@@ -204,7 +171,8 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
         attrs["temp_upload_dir"] = self.temp_upload_dir
         defaults = {
             'form_class': FileBrowseAndUploadFormField,
-            'widget': FileBrowseAndUploadWidget(attrs=attrs),
+            'widget': widget_class(attrs=attrs),
+            'site': self.site,
             'filebrowser_site': self.site,
             'directory': self.directory,
             'extensions': self.extensions,
@@ -215,20 +183,20 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
         return super(FileBrowseAndUploadField, self).formfield(**defaults)
     
     def upload_callback(self, sender, instance, **kwargs):
-        
         opts = instance._meta
-        field = getattr(instance, self.name)
+        value = getattr(instance, self.name)
+        if not value or isinstance(value, string_types):
+            return value
         
-        if field:
-
-            filename = os.path.basename(smart_text(field.filename))
+        if value and getattr(value, 'filename', None):
+            filename = os.path.basename(smart_text(value.filename))
             upload_to = opts.get_field(self.name).upload_to
             filebrowser_directory = self.site.directory
             
             if getattr(upload_to, '__call__', None):
                 upload_to = os.path.split(upload_to(instance, filename))[0]
             
-            if self.temp_upload_dir in field.path:
+            if self.temp_upload_dir in value.path:
                 new_file = get_storage_class()().get_available_name(
                     os.path.join(
                         settings.MEDIA_ROOT,
@@ -241,7 +209,7 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
                 if not os.path.isdir(new_path):
                     os.makedirs(new_path)
                     os.chmod(new_path, 0o775)
-                file_move_safe(os.path.join(settings.MEDIA_ROOT, field.path), new_file, allow_overwrite=False)
+                file_move_safe(os.path.join(settings.MEDIA_ROOT, value.path), new_file, allow_overwrite=False)
                 os.chmod(new_file, 0o775)
                 setattr(instance, self.name, new_file.replace(settings.MEDIA_ROOT + "/", ""))
                 instance.save()
@@ -249,6 +217,7 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
                 # Now generate all versions if this is an image
                 if self.format.title() == 'Image':
                     for v in settings.FILEBROWSER_VERSIONS:
+                        instance.refresh_from_db()
                         # Getattr again as the property has been changed
                         version = getattr(instance, self.name).version_generate(v)
                         os.chmod(os.path.join(settings.MEDIA_ROOT, version.path), 0o775)
@@ -257,6 +226,9 @@ class FileBrowseAndUploadField(with_metaclass(SubfieldBase, CharField)):
         models.signals.post_save.connect(self.upload_callback, sender=cls)
         super(FileBrowseAndUploadField, self).contribute_to_class(cls, name)
         
+
+FORMFIELD_FOR_DBFIELD_DEFAULTS[FileBrowseAndUploadField] = {'widget': FileBrowseAndUploadWidget}
+
 
 if 'south' in settings.INSTALLED_APPS:
     from south.modelsinspector import add_introspection_rules
