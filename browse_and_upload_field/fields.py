@@ -155,7 +155,7 @@ class FileBrowseAndUploadField(CharField):
 
     def value_to_string(self, obj):
         value = self.value_from_object(obj)
-        if not value:
+        if not value or isinstance(value, string_types):
             return value
         return value.path
 
