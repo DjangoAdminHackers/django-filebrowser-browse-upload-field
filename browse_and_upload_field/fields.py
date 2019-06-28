@@ -48,7 +48,6 @@ class FileBrowseAndUploadWidget(Input):
         super(FileBrowseAndUploadWidget, self).__init__(attrs)
         self.site = attrs.get('filebrowser_site', None)
         #self.site = attrs.get('site', '')
-        print(self.site)
         self.directory = attrs.get('directory', '')
         self.extensions = attrs.get('extensions', '')
         self.format = attrs.get('format', '')
