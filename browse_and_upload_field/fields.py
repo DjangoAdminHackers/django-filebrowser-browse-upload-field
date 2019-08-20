@@ -7,7 +7,7 @@ from django.utils.six import string_types
 
 # DJANGO IMPORTS
 from django.conf import settings
-from django.core import urlresolvers
+from django.urls import reverse
 from django.core.files.move import file_move_safe
 from django.core.files.storage import get_storage_class
 from django.db import models
@@ -60,7 +60,7 @@ class FileBrowseAndUploadWidget(Input):
         super(FileBrowseAndUploadWidget, self).__init__(attrs)
 
     def render(self, name, value, attrs=None, renderer=None):
-        url = urlresolvers.reverse(self.site.name + ":fb_browse")
+        url = reverse(self.site.name + ":fb_browse")
         if value is None:
             value = ""
         if value != "" and not isinstance(value, FileObject):
