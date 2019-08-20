@@ -2,7 +2,7 @@ import json
 import os
 import re
 
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils.encoding import smart_text
 
