@@ -4,7 +4,7 @@ import re
 
 from django.urls import reverse
 from django.http import HttpResponse, HttpResponseBadRequest
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 
 from filebrowser import signals
 from filebrowser.base import FileObject
@@ -65,20 +65,20 @@ class CustomFileBrowserSite(FileBrowserSite):
             uploadedfile = handle_file_upload(path, filedata, site=self)
 
             if file_already_exists and OVERWRITE_EXISTING:
-                old_file = smart_text(file_path)
-                new_file = smart_text(uploadedfile)
+                old_file = smart_str(file_path)
+                new_file = smart_str(uploadedfile)
                 self.storage.move(new_file, old_file, allow_overwrite=True)
-                full_path = FileObject(smart_text(old_file), site=self).path_full
+                full_path = FileObject(smart_str(old_file), site=self).path_full
             else:
-                file_name = smart_text(uploadedfile)
+                file_name = smart_str(uploadedfile)
                 filedata.name = os.path.relpath(file_name, path)
-                full_path = FileObject(smart_text(file_name), site=self).path_full
+                full_path = FileObject(smart_str(file_name), site=self).path_full
 
             # set permissions
             if DEFAULT_PERMISSIONS is not None:
                 os.chmod(full_path, DEFAULT_PERMISSIONS)
 
-            f = FileObject(smart_text(file_name), site=self)
+            f = FileObject(smart_str(file_name), site=self)
             signals.filebrowser_post_upload.send(sender=request, path=folder, file=f, site=self)
             
             # We don't know at this stage if it's an image

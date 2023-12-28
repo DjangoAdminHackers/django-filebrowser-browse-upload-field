@@ -15,10 +15,10 @@ from django.db.models.fields import CharField
 from django import forms
 from django.forms.widgets import Input
 from django.template.loader import render_to_string
-from django.utils.encoding import smart_text
+from django.utils.encoding import smart_str
 from django.utils.six import with_metaclass
-from django.utils.translation import ugettext_lazy as _
-from django.contrib.admin.templatetags.admin_static import static
+from django.utils.translation import gettext_lazy as _
+from django.templatetags.static import static
 from django.contrib.admin.options import FORMFIELD_FOR_DBFIELD_DEFAULTS
 
 # FILEBROWSER IMPORTS
@@ -136,7 +136,7 @@ class FileBrowseAndUploadField(CharField):
             return value
         return FileObject(value, site=self.site)
 
-    def from_db_value(self, value, expression, connection, context):
+    def from_db_value(self, value, expression, connection, context=None):
         return self.to_python(value)
 
     def get_db_prep_value(self, value, connection, prepared=False):
@@ -188,7 +188,7 @@ class FileBrowseAndUploadField(CharField):
             return value
         
         if value and getattr(value, 'filename', None):
-            filename = os.path.basename(smart_text(value.filename))
+            filename = os.path.basename(smart_str(value.filename))
             upload_to = opts.get_field(self.name).upload_to
             filebrowser_directory = self.site.directory
             
@@ -228,7 +228,3 @@ class FileBrowseAndUploadField(CharField):
 
 FORMFIELD_FOR_DBFIELD_DEFAULTS[FileBrowseAndUploadField] = {'widget': FileBrowseAndUploadWidget}
 
-
-if 'south' in settings.INSTALLED_APPS:
-    from south.modelsinspector import add_introspection_rules
-    add_introspection_rules([], ["^filebrowser\.fields\.FileBrowseAndUploadField"])
